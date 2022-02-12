@@ -27,7 +27,7 @@ setup(
     long_description=readme,
     long_description_content_type="text/markdown",
     include_package_data=True,
-    package_data={'pywordle',['data/*.txt']},
+    package_data={'pywordle': ['data/*.txt']},
     install_requires=requirements,
     extras_require=extras_require,
     python_requires='>=3.7.0',
