@@ -1,6 +1,8 @@
 import os
 import sys
 import random
+import importlib.resources as pkg_resources
+from . import data
 
 # Console imports, these are only necessary for playing from the terminal
 from termcolor import colored
@@ -22,10 +24,8 @@ class Wordle:
         self.guesses: list = [
             g.upper() for g in kwargs['guesses']] if 'guesses' in kwargs else []
         self.max_guess_attempts: int = kwargs['max_guess_attempts'] if 'max_guess_attempts' in kwargs else 6
-        self.words: list = [g.replace('\n', '').upper() for g in open(
-            os.path.join(os.path.dirname(__file__), 'answers.txt'), 'r').readlines()]
-        self.dictionary: list = [g.replace('\n', '').upper() for g in open(os.path.join(
-            os.path.dirname(__file__), 'guesses.txt'), 'r').readlines()] + self.words
+        self.words: list = [g.replace('\n', '').upper() for g in pkg_resources.read_text(data,'answers.txt').splitlines()]
+        self.dictionary: list = [g.replace('\n', '').upper() for g in pkg_resources.read_text(data,'guesses.txt').splitlines()] + self.words
         self.alphabet: list = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K',
                                'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
         self.answer: str = kwargs['answer'].upper() if 'answer' in kwargs and kwargs['answer'].upper(
@@ -206,9 +206,4 @@ Type quit/exit at any time to close the game.
                   colored(self.answer, "green"))
 
 
-if __name__ == "__main__":
-    try:
-        game = Wordle()
-        game.play()
-    except KeyboardInterrupt:
-        pass
+
