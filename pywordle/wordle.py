@@ -2,13 +2,10 @@ import sys
 import random
 import importlib.resources as pkg_resources
 from collections import Counter
-from . import data
 
 # Console imports, these are only necessary for playing from the terminal
 from termcolor import colored
 from tabulate import tabulate
-
-
 
 class Wordle:
     """A representation of the popular game Wordle in Python
@@ -22,8 +19,8 @@ class Wordle:
     """
 
     def __init__(self, guesses: list = None, max_guess_attempts: int = None, answer: str = None):
-        self.words: list = [g.replace('\n', '').upper() for g in pkg_resources.read_text(data,'answers.txt').splitlines()]
-        self.dictionary: list = [g.replace('\n', '').upper() for g in pkg_resources.read_text(data,'guesses.txt').splitlines()] + self.words
+        self.words: list = [g.replace('\n', '').upper() for g in pkg_resources.files(__package__).joinpath('answers.txt').read_text().splitlines()]
+        self.dictionary: list = [g.replace('\n', '').upper() for g in pkg_resources.files(__package__).joinpath('guesses.txt').read_text().splitlines()] + self.words
         self.alphabet: list = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K',
                                'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
         
@@ -182,7 +179,7 @@ Type quit/exit at any time to close the game.
             sys.exit()
 
         if not self.validate_guess(guess):
-            if guess is not "":
+            if guess != "":
                 print(colored(guess, "red"), "is not a valid 5-letter word.")
                 
             return self.guess_prompt()
