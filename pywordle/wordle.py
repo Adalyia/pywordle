@@ -1,12 +1,13 @@
-import os
 import sys
 import random
 import importlib.resources as pkg_resources
+from collections import Counter
 from . import data
 
 # Console imports, these are only necessary for playing from the terminal
 from termcolor import colored
 from tabulate import tabulate
+
 
 
 class Wordle:
@@ -20,16 +21,15 @@ class Wordle:
     :type answer: str
     """
 
-    def __init__(self, *args, **kwargs):
-        self.guesses: list = [
-            g.upper() for g in kwargs['guesses']] if 'guesses' in kwargs else []
-        self.max_guess_attempts: int = kwargs['max_guess_attempts'] if 'max_guess_attempts' in kwargs else 6
+    def __init__(self, guesses: list = None, max_guess_attempts: int = None, answer: str = None):
         self.words: list = [g.replace('\n', '').upper() for g in pkg_resources.read_text(data,'answers.txt').splitlines()]
         self.dictionary: list = [g.replace('\n', '').upper() for g in pkg_resources.read_text(data,'guesses.txt').splitlines()] + self.words
         self.alphabet: list = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K',
                                'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
-        self.answer: str = kwargs['answer'].upper() if 'answer' in kwargs and kwargs['answer'].upper(
-        ) in self.words else random.choice(self.words)
+        
+        self.guesses: list = [g.upper() for g in guesses] if guesses is not None else []
+        self.max_guess_attempts: int = max_guess_attempts if max_guess_attempts is not None else 6
+        self.answer: str = answer.upper() if len(answer) == 5 and answer.upper() in self.words else random.choice(self.words)
 
         self.greeting = """Guess the WORDLE!
 
@@ -134,9 +134,10 @@ Type quit/exit at any time to close the game.
         :return: Whether the guess is valid
         :rtype: bool
         """
+        
         if not self.completed and (guess.upper() in self.dictionary):
             return True
-
+        
         return False
 
     def colorize(self, input: str) -> list:
@@ -147,19 +148,25 @@ Type quit/exit at any time to close the game.
         :return: A list of colorized characters
         :rtype: list
         """
-        if self.answer is None:
-            return None
-
-        letters = [l for l in input]
-        colored_letters = []
-
+        
+        colored_letters = [None, None, None, None, None]
+        
+        letter_count = Counter(self.answer)
+        
+        # First iterate through our list coloring any true matches green
         for i in range(5):
-            if letters[i] in self.answer:
-                colored_letters.append(colored(
-                    letters[i], "green") if letters[i] == self.answer[i] else colored(letters[i], "yellow"))
-            else:
-                colored_letters.append(colored(letters[i], "grey"))
-
+            if input[i] == self.answer[i]:
+                colored_letters[i] = colored(input[i],"green")
+                letter_count[input[i]] -= 1
+        
+        # Next re-iterate the list and color any partial matches yellow up to the number of times said letter appears in the answer
+        for i in range(5):
+            if input[i] in self.answer and input[i] != self.answer[i] and letter_count[input[i]] > 0:
+                colored_letters[i] = colored(input[i],"yellow")
+                letter_count[input[i]] -= 1
+            elif colored_letters[i] is None:
+                colored_letters[i] = colored(input[i],"grey")
+                
         return colored_letters
 
     def guess_prompt(self) -> str:
@@ -175,7 +182,9 @@ Type quit/exit at any time to close the game.
             sys.exit()
 
         if not self.validate_guess(guess):
-            print(colored(guess, "red"), "is not a valid 5-letter word.")
+            if guess is not "":
+                print(colored(guess, "red"), "is not a valid 5-letter word.")
+                
             return self.guess_prompt()
 
         return guess
