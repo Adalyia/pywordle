@@ -29,7 +29,7 @@ class Wordle:
         
         self.guesses: list = [g.upper() for g in guesses] if guesses is not None else []
         self.max_guess_attempts: int = max_guess_attempts if max_guess_attempts is not None else 6
-        self.answer: str = answer.upper() if len(answer) == 5 and answer.upper() in self.words else random.choice(self.words)
+        self.answer: str = answer.upper() if answer is not None and len(answer) == 5 and answer.upper() in self.words else random.choice(self.words)
 
         self.greeting = """Guess the WORDLE!
 
