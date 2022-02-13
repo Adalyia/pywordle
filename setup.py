@@ -19,7 +19,7 @@ packages = [
 setup(
     name='pywordle',
     author='Adalyia',
-    url='https://github.com/Adalyia/aiowowapi',
+    url='https://github.com/Adalyia/pywordle',
     version='1.0.0',
     packages=packages,
     license='MIT',
