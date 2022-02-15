@@ -19,25 +19,25 @@ class Wordle:
     """
 
     def __init__(self, guesses: list = None, max_guess_attempts: int = None, answer: str = None):
-        self.words: list = [g.replace('\n', '').upper() for g in pkg_resources.files(__package__).joinpath('answers.txt').read_text().splitlines()]
-        self.dictionary: list = [g.replace('\n', '').upper() for g in pkg_resources.files(__package__).joinpath('guesses.txt').read_text().splitlines()] + self.words
-        self.alphabet: list = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K',
+        self._words: list = [g.replace('\n', '').upper() for g in pkg_resources.files(__package__).joinpath('answers.txt').read_text().splitlines()]
+        self._dictionary: list = [g.replace('\n', '').upper() for g in pkg_resources.files(__package__).joinpath('guesses.txt').read_text().splitlines()] + self._words
+        self._alphabet: list = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K',
                                'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
         
-        self.guesses: list = [g.upper() for g in guesses] if guesses is not None else []
-        self.max_guess_attempts: int = max_guess_attempts if max_guess_attempts is not None else 6
-        self.answer: str = answer.upper() if answer is not None and len(answer) == 5 and answer.upper() in self.words else random.choice(self.words)
+        self._guesses: list = [g.upper() for g in guesses] if guesses is not None else []
+        self._max_guess_attempts: int = max_guess_attempts if max_guess_attempts is not None else 6
+        self._answer: str = answer.upper() if answer is not None and len(answer) == 5 and answer.upper() in self._words else random.choice(self._words)
 
-        self.greeting = """Guess the WORDLE!
+        self._greeting = """Guess the WORDLE!
 
 Each guess must be a valid five-letter word. Hit the enter button to submit.
 
-After each guess, the color of the tiles will change to show how close your guess was to the word.
+After each guess, the colour of the tiles will change to show how close your guess was to the word.
 
 Type quit/exit at any time to close the game.
         """
 
-        self.example_data = [
+        self._example_data = [
             [colored("W", "green"), colored("E", "grey"), colored("A", "grey"), colored(
                 "R", "grey"), colored("Y", "grey"), "The letter W is in the word and in the correct spot."],
             [colored("P", "grey"), colored("I", "yellow"), colored("L", "grey"), colored(
@@ -56,7 +56,7 @@ Type quit/exit at any time to close the game.
 
         used = []
 
-        for guess in self.guesses:
+        for guess in self._guesses:
             for letter in guess:
                 if letter not in used:
                     used.append(letter)
@@ -71,7 +71,7 @@ Type quit/exit at any time to close the game.
         :rtype: list
         """
 
-        return [l for l in self.alphabet if l not in self.used_letters]
+        return [l for l in self._alphabet if l not in self.used_letters]
 
     @property
     def completed(self) -> bool:
@@ -80,7 +80,7 @@ Type quit/exit at any time to close the game.
         :return: Whether there's any remaining guess attempts allowed
         :rtype: bool
         """
-        return len(self.guesses) >= self.max_guess_attempts
+        return len(self._guesses) >= self._max_guess_attempts
 
     @property
     def winner(self) -> bool:
@@ -90,29 +90,87 @@ Type quit/exit at any time to close the game.
         :rtype: bool
         """
 
-        return self.answer in self.guesses
+        return self._answer in self._guesses
 
     @property
     def guess_table(self) -> str:
-        """Returns a colorized table of the guesses made in the current game
+        """Returns a colourized table of the guesses made in the current game
 
-        :return: A colorized table of guesses
+        :return: A colourized table of guesses
         :rtype: str
         """
 
-        return tabulate([self.colorize(guess) for guess in self.guesses], tablefmt="pretty")
+        return tabulate([self.colourize(graded_guess) for graded_guess in [self.grade_guess(guess) for guess in self._guesses]], tablefmt="pretty")
 
     @property
     def example_table(self) -> str:
-        """Returns a colorized table showing gameplay examples
-
-        :return: A colorized table of gameplay examples
+        """Returns a colourized table showing gameplay examples
+        
+        :return: A colourized table of gameplay examples
         :rtype: str
         """
 
-        return tabulate(self.example_data, tablefmt="pretty")
+        return tabulate(self._example_data, tablefmt="pretty")
+    
+    def grade_guess(self, input: str) -> list:
+        """Grade each letter of a guess from 0-2 for Miss, Partial, and True match
 
-    def make_guess(self, guess: str):
+        :param guess: The guess to grade as a string
+        :type guess: str
+        :return: A graded list of the letters in a guess
+        :rtype: list
+        """
+        letter_data = [None, None, None, None, None]
+        
+        letter_count = Counter(self._answer)
+        
+        # First iterate through our list giving any true match a grade of 2
+        for i in range(5):
+            if input[i] == self._answer[i]:
+                letter_data[i] = [input[i],2]
+                letter_count[input[i]] -= 1
+        
+        # Next re-iterate the list and mark any partial matches up to the number of times said letter appears in the answer as grade 1
+        for i in range(5):
+            if input[i] in self._answer and input[i] != self._answer[i] and letter_count[input[i]] > 0:
+                letter_data[i] = [input[i],1]
+                letter_count[input[i]] -= 1
+            elif letter_data[i] is None:
+                # And any remaining as 0
+                letter_data[i] = [input[i],0]
+        
+        return letter_data
+    
+    def colourize(self, input: list) -> list:
+        """Returns a list of letters coloured for the console/terminal
+
+        :param input: A graded list of letters to be colourized
+        :type input: list
+        :return: A list of colourized characters
+        :rtype: list
+        """
+        
+                
+        return [colored(l[0], self.get_colour(l[1])) for l in input]
+    
+    def get_colour(self, grade: int) -> str:
+        """Convert colour grade to a termcolor colour string
+
+        :param grade: A colour grade
+        :type grade: int
+        :return: Termcolor colour string
+        :rtype: str
+        """
+        
+        colours = {
+            0: "grey",
+            1: "yellow",
+            2: "green"
+        }
+        
+        return colours[grade] if grade in colours else "grey"
+
+    def make_guess(self, guess: str) -> bool:
         """Attempts to make an additional guess as to the correct word
 
         :param guess: The guess to enter
@@ -121,7 +179,13 @@ Type quit/exit at any time to close the game.
         :rtype: bool
         """
 
-        self.guesses.append(guess.upper())
+        guess = guess.upper()
+        
+        if self.validate_guess(guess):
+            self._guesses.append(guess)
+            return True
+        
+        return False
 
     def validate_guess(self, guess: str) -> bool:
         """Validates a user's guess
@@ -132,39 +196,10 @@ Type quit/exit at any time to close the game.
         :rtype: bool
         """
         
-        if not self.completed and (guess.upper() in self.dictionary):
+        if not self.completed and (guess in self._dictionary):
             return True
         
-        return False
-
-    def colorize(self, input: str) -> list:
-        """Returns a list of letters coloured
-
-        :param input: The word or guess to be colorized based on the game's answer
-        :type input: str
-        :return: A list of colorized characters
-        :rtype: list
-        """
-        
-        colored_letters = [None, None, None, None, None]
-        
-        letter_count = Counter(self.answer)
-        
-        # First iterate through our list coloring any true matches green
-        for i in range(5):
-            if input[i] == self.answer[i]:
-                colored_letters[i] = colored(input[i],"green")
-                letter_count[input[i]] -= 1
-        
-        # Next re-iterate the list and color any partial matches yellow up to the number of times said letter appears in the answer
-        for i in range(5):
-            if input[i] in self.answer and input[i] != self.answer[i] and letter_count[input[i]] > 0:
-                colored_letters[i] = colored(input[i],"yellow")
-                letter_count[input[i]] -= 1
-            elif colored_letters[i] is None:
-                colored_letters[i] = colored(input[i],"grey")
-                
-        return colored_letters
+        return False 
 
     def guess_prompt(self) -> str:
         """Prompt the user to enter a guess in the console
@@ -190,10 +225,10 @@ Type quit/exit at any time to close the game.
         """Advances/begins a Wordle game with the current parameters/state in textual format
         """
 
-        print(self.greeting)
+        print(self._greeting)
         print(self.example_table)
 
-        if len(self.guesses) > 0:
+        if len(self._guesses) > 0:
             print(self.guess_table)
 
         while not self.completed and not self.winner:
@@ -209,7 +244,7 @@ Type quit/exit at any time to close the game.
             print(colored("Congratulations, you won!"))
         else:
             print("Better luck next time! The correct word was:",
-                  colored(self.answer, "green"))
+                  colored(self._answer, "green"))
 
 
 
