@@ -120,18 +120,18 @@ Type quit/exit at any time to close the game.
         :return: A graded list of the letters in a guess
         :rtype: list
         """
-        letter_data = [None for letter in input]
+        letter_data = [None, None, None, None, None]
         
         letter_count = Counter(self._answer)
         
         # First iterate through our list giving any true match a grade of 2
-        for i in range(len(letter_data)):
+        for i in range(5):
             if input[i] == self._answer[i]:
                 letter_data[i] = [input[i],2]
                 letter_count[input[i]] -= 1
         
         # Next re-iterate the list and mark any partial matches up to the number of times said letter appears in the answer as grade 1
-        for i in range(len(letter_data)):
+        for i in range(5):
             if input[i] in self._answer and input[i] != self._answer[i] and letter_count[input[i]] > 0:
                 letter_data[i] = [input[i],1]
                 letter_count[input[i]] -= 1
