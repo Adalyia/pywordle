@@ -80,7 +80,7 @@ Type quit/exit at any time to close the game.
         :return: Whether there's any remaining guess attempts allowed
         :rtype: bool
         """
-        return len(self._guesses) >= self._max_guess_attempts
+        return (len(self._guesses) >= self._max_guess_attempts) or self._answer in self._guesses
 
     @property
     def winner(self) -> bool:
